@@ -4,25 +4,15 @@
 # Notice it always rebuilds and reinstalls packages even if they're already installed.
 #
 
-. `dirname $0`/functions
-
-if [ $# -eq 0 ];then
-    print_help
-    exit 1
-fi
+BUILD_RPM=1
+. `dirname $0`/../functions.sh
+. `dirname $0`/../environment.sh
 
 prepare_environment
 if [ $? -eq 1 ];then
     print_ERR "Failed to setup building environment. Exiting..."
     exit 1
 fi
-
-if [ "$OS_NAME" == "Rocky Linux" ] || [ "$OS_NAME" == "AlmaLinux" ] && [ $OS_VERSION = "8.8" ];then
-    dnf -y install epel-release
-    dnf config-manager --set-enabled powertools
-fi
-
-REPO_DIR=$1
 
 # Apple Grand Central Dispatch
 `dirname $0`/build_libdispatch.sh $1

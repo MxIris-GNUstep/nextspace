@@ -1,5 +1,7 @@
+%global toolchain clang
+
 Name:           nextspace-frameworks
-Version:        0.91
+Version:        0.95
 Release:        0%{?dist}
 Summary:        NextSpace core libraries.
 Group:          Libraries/NextSpace
@@ -11,12 +13,7 @@ Provides:	DesktopKit.so
 Provides:	SystemKit.so
 Provides:	SoundKit.so
 
-%if 0%{?el7}
-BuildRequires:	llvm-toolset-7.0-clang >= 7.0.1
-%else
 BuildRequires:	clang >= 7.0.1
-%endif
-
 BuildRequires:	nextspace-gnustep-devel
 # SystemKit
 BuildRequires:	file-devel
@@ -42,7 +39,7 @@ Requires:	libxkbfile >= 1.0.9
 Requires:	libXcursor >= 1.1.14
 # SoundKit
 Requires:	pulseaudio-libs >= 10.0
-Requires:	pulseaudio >= 10.0
+#Requires:	pulseaudio >= 10.0
 
 
 %description
@@ -62,9 +59,6 @@ Header files for NextSpace core libraries (SystemKit, DesktopKit, SoundKit).
 # Build phase
 #
 %build
-%if 0%{?el7}
-source /opt/rh/llvm-toolset-7.0/enable
-%endif
 export CC=clang
 export CXX=clang++
 export GNUSTEP_MAKEFILES=/Developer/Makefiles
@@ -124,7 +118,9 @@ cd ..
 #%pre
 
 %post
-/bin/ln -s /usr/NextSpace/Frameworks/DesktopKit.framework/Resources/25-nextspace-fonts.conf /etc/fonts/conf.d/25-nextspace-fonts.conf
+if [ ! -f /etc/fonts/conf.d/25-nextspace-fonts.conf ];then
+  /bin/ln -s /usr/NextSpace/Frameworks/DesktopKit.framework/Resources/25-nextspace-fonts.conf /etc/fonts/conf.d/25-nextspace-fonts.conf
+fi
 /sbin/ldconfig
 
 #
@@ -138,6 +134,12 @@ cd ..
 /sbin/ldconfig
 
 %changelog
+* Tue Nov 5 2024 Andres Morales <armm77@icloud.com>
+  Support for CentOS 7 is being dropped.
+
+* Wed Jun 12 2024  Sergii Stoian <stoyan255@gmail.com> - 0.95-0
+- bump package version to 0.95 release.
+
 * Fri May 22 2020 Sergii Stoian <stoyan255@gmail.com> - 0.90-2
 - new dependency "google-roboto-mono-fonts" - RobotoMono.nfont
   use files from this package.

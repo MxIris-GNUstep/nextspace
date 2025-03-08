@@ -23,7 +23,7 @@
 #import <AppKit/AppKit.h>
 
 #import <SystemKit/OSEScreen.h>
-#import <DesktopKit/NXTDefaults.h>
+#import <SystemKit/OSEDefaults.h>
 
 #import "Application.h"
 #import "Recycler.h"
@@ -139,19 +139,21 @@ int main(int argc, const char **argv)
 
   fprintf(stderr, "=== Starting Workspace ===\n");
   workspace_q = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+  dispatch_sync(workspace_q, ^{
+    @autoreleasepool {
+      // Restore display layout
+      OSEScreen *screen = [OSEScreen sharedScreen];
+      [screen applySavedDisplayLayout];
+    }
+  });
   {
-    
     // DISPATCH_QUEUE_CONCURRENT is mandatory for CFRunLoop run.
-    dispatch_queue_t window_manager_q = dispatch_queue_create("ns.workspace.wm", DISPATCH_QUEUE_CONCURRENT);
+    dispatch_queue_t window_manager_q = dispatch_queue_create("ns.workspace.wm",
+                                                              DISPATCH_QUEUE_CONCURRENT);
 
     //--- Initialize Window Manager
     fprintf(stderr, "=== Initializing Window Manager ===\n");
     dispatch_sync(window_manager_q, ^{
-      @autoreleasepool {
-        // Restore display layout
-        [[[OSEScreen new] autorelease] applySavedDisplayLayout];
-      }
-
       wInitialize(argc, (char **)argv);
       wStartUp(True);
 
@@ -160,7 +162,7 @@ int main(int argc, const char **argv)
     fprintf(stderr, "=== Window Manager initialized! ===\n");
 
     //--- Composer
-    NXTDefaults *defs = [[NXTDefaults alloc] initDefaultsWithPath:NSUserDomainMask
+    OSEDefaults *defs = [[OSEDefaults alloc] initDefaultsWithPath:NSUserDomainMask
                                                            domain:@"Workspace"];
     if ([defs boolForKey:@"ComposerEnabled"] != NO) {
       dispatch_queue_t composer_q = dispatch_queue_create("ns.workspace.composer", DISPATCH_QUEUE_CONCURRENT);

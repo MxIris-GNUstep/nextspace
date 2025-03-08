@@ -31,8 +31,8 @@
 //=============================================================================
 
 #import <DesktopKit/DesktopKit.h>
-#import <DesktopKit/NXTDefaults.h>
-#import <DesktopKit/NXTFileManager.h>
+#import <SystemKit/OSEDefaults.h>
+#import <SystemKit/OSEFileManager.h>
 
 #import <Workspace.h>
 
@@ -40,17 +40,18 @@
 #import "math.h"
 
 #import "Controller.h"
-#import "FileViewer.h"
 #import "ModuleLoader.h"
 #import "Inspectors/Inspector.h"
+#import <Finder.h>
 #import "PathIcon.h"
 
-#import <Processes/ProcessManager.h>
 #import <Operations/FileMover.h>
 #import <Operations/Sizer.h>
+#import <Processes/ProcessManager.h>
 
 #import <Preferences/Browser/BrowserPrefs.h>
-#import <Finder.h>
+
+#import "FileViewer.h"
 
 #define NOTIFICATION_CENTER [NSNotificationCenter defaultCenter]
 #define WIN_MIN_HEIGHT 380
@@ -149,7 +150,7 @@
 
 - initRootedAtPath:(NSString *)aRootPath viewer:(NSString *)viewerType isRoot:(BOOL)isRoot
 {
-  NXTDefaults *df = [NXTDefaults userDefaults];
+  OSEDefaults *df = [OSEDefaults userDefaults];
   NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
   NSString *relativePath = nil;
   NSSize aSize;
@@ -171,6 +172,8 @@
     aSize = NSMakeSize(168, PATH_VIEW_HEIGHT);
   }
   [NXTIconView setDefaultSlotSize:aSize];
+
+  processManager = [ProcessManager shared];
 
   // [NSBundle loadNibNamed:@"FileViewer" owner:self];
   // To avoid .gorm loading ineterference manually construct File Viewer window.
@@ -242,11 +245,11 @@
     // For updating views (Shelf, PathView, Viewer)
     [nc addObserver:self
            selector:@selector(volumeDidMount:)
-               name:NXVolumeMounted
+               name:OSEMediaVolumeDidMountNotification
              object:mediaManager];
     [nc addObserver:self
            selector:@selector(volumeDidUnmount:)
-               name:NXVolumeUnmounted
+               name:OSEMediaVolumeDidUnmountNotification
              object:mediaManager];
   }
 
@@ -309,7 +312,7 @@
   //  NSRect       contentRect = NSMakeRect(100, 500, 522, 390);
   NSRect contentRect = NSMakeRect(100, 500, WIN_DEF_WIDTH, 390);
   NSSize wSize, sSize;
-  NXTDefaults *df = [NXTDefaults userDefaults];
+  OSEDefaults *df = [OSEDefaults userDefaults];
 
   // Create window
   if (isRootViewer) {
@@ -340,7 +343,7 @@
   // Disk info label
   // Frame of info labels will be adjusted in 'updateInfoLabels:' later.
   diskInfo = [[NSTextField alloc] initWithFrame:NSMakeRect(8, 312, 231, 12)];
-  [diskInfo setAutoresizingMask:(NSViewMaxXMargin | NSViewMinYMargin | NSViewWidthSizable)];
+  [diskInfo setAutoresizingMask:(NSViewMinYMargin | NSViewWidthSizable)];
   [diskInfo setEnabled:NO];  // not editable, not selectable
   [diskInfo setBezeled:NO];
   [diskInfo setBordered:NO];
@@ -353,7 +356,7 @@
   [diskInfo release];
 
   // Just add label to viewer window. Proccesses will update it.
-  operationInfo = [[ProcessManager shared] backInfoLabel];
+  operationInfo = [processManager backInfoLabel];
   [operationInfo setEditable:NO];
   [operationInfo setSelectable:NO];
   [operationInfo setRefusesFirstResponder:YES];
@@ -380,7 +383,7 @@
   // Path view enclosed into scroll view
   scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 212, SPLIT_DEF_WIDTH, 98)];
   [scrollView setBorderType:NSBezelBorder];
-  [scrollView setAutoresizingMask:(NSViewWidthSizable | NSViewMaxXMargin | NSViewMinYMargin)];
+  [scrollView setAutoresizingMask:(NSViewWidthSizable | NSViewMinYMargin)];
 
   pathView = [[PathView alloc] initWithFrame:NSMakeRect(0, 0, SPLIT_DEF_WIDTH - 4, 98) owner:self];
   [pathView setAutoresizingMask:0];
@@ -409,7 +412,7 @@
   [splitView setDelegate:self];
 
   {
-    NXTDefaults *df = [NXTDefaults userDefaults];
+    OSEDefaults *df = [OSEDefaults userDefaults];
     NSRect shelfFrame = [shelf frame];
     NSRect pathFrame = [[pathView enclosingScrollView] frame];
     NSSize windowMinSize = [window minSize];
@@ -435,6 +438,8 @@
 {
   NSDebugLLog(@"Memory", @"FileViewer %@: dealloc", rootPath);
 
+  [[NSDistributedNotificationCenter notificationCenterForType:NSLocalNotificationCenterType]
+      removeObserver:self];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 
   // [viewer release];
@@ -447,7 +452,7 @@
   // Processes holds list of labels for FileViewers.
   // This message removes local copy of label from Processes' list
   if ([operationInfo retainCount] > 1) {
-    [[ProcessManager shared] releaseBackInfoLabel:operationInfo];
+    [processManager releaseBackInfoLabel:operationInfo];
   }
   TEST_RELEASE(lock);
 
@@ -604,12 +609,12 @@
 
 - (NSArray *)directoryContentsAtPath:(NSString *)relPath forPath:(NSString *)targetPath
 {
-  NXTFileManager *fm = [NXTFileManager defaultManager];
+  OSEFileManager *fm = [OSEFileManager defaultManager];
   NSString *path = [rootPath stringByAppendingPathComponent:relPath];
   NSDictionary *folderDefaults;
 
   // Get sorted directory contents
-  if ((folderDefaults = [[NXTDefaults userDefaults] objectForKey:path]) != nil) {
+  if ((folderDefaults = [[OSEDefaults userDefaults] objectForKey:path]) != nil) {
     sortFilesBy = [[folderDefaults objectForKey:@"SortBy"] intValue];
   } else {
     sortFilesBy = [fm sortFilesBy];
@@ -992,7 +997,7 @@
 
 - (void)restoreShelf
 {
-  NXTDefaults *df = [NXTDefaults userDefaults];
+  OSEDefaults *df = [OSEDefaults userDefaults];
   NSDictionary *shelfRep = nil;
   NSArray *paths = nil;
   PathIcon *icon = nil;
@@ -1165,7 +1170,7 @@
 
 - (void)windowWillClose:(NSNotification *)notif
 {
-  NXTDefaults *df = [NXTDefaults userDefaults];
+  OSEDefaults *df = [OSEDefaults userDefaults];
   NSFileManager *fm = [NSFileManager defaultManager];
   NSString *file = nil;
 
@@ -1253,7 +1258,7 @@
 {
   NSInteger rState;
 
-  rState = [[NXTDefaults userDefaults] integerForKey:@"ShelfIsResizable"];
+  rState = [[OSEDefaults userDefaults] integerForKey:@"ShelfIsResizable"];
   [splitView setResizableState:rState];
 }
 
@@ -1442,7 +1447,7 @@
 
 - (void)globalUserPreferencesDidChange:(NSNotification *)aNotif
 {
-  NXTFileManager *fm = [NXTFileManager defaultManager];
+  OSEFileManager *fm = [OSEFileManager defaultManager];
   BOOL hidden = [fm isShowHiddenFiles];
   NXTSortType sort = [fm sortFilesBy];
 
@@ -1461,6 +1466,10 @@
   NSString *mountPoint = [[notif userInfo] objectForKey:@"MountPoint"];
   PathIcon *icon;
   NSString *iconPath;
+
+  if (mountPoint == nil) {
+    return;
+  }
 
   NSDebugLLog(@"FileViewer", @"Volume '%@' did mount at path: %@",
               [[notif userInfo] objectForKey:@"UNIXDevice"], mountPoint);
@@ -1491,6 +1500,10 @@
   PathIcon *icon;
   NSString *mountPoint = [[notif userInfo] objectForKey:@"MountPoint"];
   NSString *iconPath;
+
+  if (mountPoint == nil) {
+    return;
+  }
 
   NSDebugLLog(@"FileViewer", @"Volume '%@' mounted at '%@' did unmount",
               [[notif userInfo] objectForKey:@"UNIXDevice"], mountPoint);
@@ -1596,6 +1609,61 @@
                 format:_(@"Failed to initialize viewer of type %@"), viewerType];
   }
 }
+
+// Edit
+/*
+   Cut, Copy and Paste operations implemented with ProcessManager for several reasons:
+   1. Access to pasteboard is quite slow - validateMenuItem: shows delay (try to detach Edit
+      menu and see delay in close button appearing).
+   2. FileViewer needs to know which files/directories were cut to displlay them grayed out.
+ */
+
+- (void)cut:(id)sender
+{
+  NSString *sourceDir = [self absolutePath];
+  NSArray *objects = selection;
+
+  if (selection == nil) {
+    objects = [NSArray arrayWithObject:[sourceDir lastPathComponent]];
+    sourceDir = [sourceDir stringByDeletingLastPathComponent];
+  }
+
+  [processManager registerEditOperation:MoveOperation
+                          directoryPath:sourceDir
+                                objects:objects];
+}
+
+- (void)copy:(id)sender
+{
+  NSString *sourceDir = [self absolutePath];
+  NSArray *objects = selection;
+
+  if (selection == nil) {
+    objects = [NSArray arrayWithObject:[sourceDir lastPathComponent]];
+    sourceDir = [sourceDir stringByDeletingLastPathComponent];
+  }
+
+  [processManager registerEditOperation:CopyOperation
+                          directoryPath:sourceDir
+                                objects:objects];
+}
+
+- (void)paste:(id)sender
+{
+  NSDictionary *operation = processManager.editOperation;
+  OperationType opType = [operation[EditOperationTypeKey] integerValue];
+
+  NSLog(@"[FileViewer-paste] %@ - %@, opType: %i", operation[EditPathKey],
+        operation[EditObjectsKey], opType);
+
+  // Start operation
+  [processManager startOperationWithType:opType
+                                  source:operation[EditPathKey]
+                                  target:[self absolutePath]
+                                   files:operation[EditObjectsKey]];
+  [processManager unregisterEditOperation];
+}
+
 
 // File
 - (void)open:(id)sender
@@ -1704,7 +1772,7 @@
                                  sourceDir:[self absolutePath]
                                  targetDir:nil
                                      files:files
-                                   manager:[ProcessManager shared]];
+                                   manager:processManager];
 }
 
 // TODO
@@ -1738,7 +1806,7 @@
                                  sourceDir:fullPath
                                  targetDir:nil
                                      files:files
-                                   manager:[ProcessManager shared]];
+                                   manager:processManager];
 
   NSDebugLLog(@"FileViewer", @"Full path after destroy: %@", fullPath);
 }
@@ -1815,6 +1883,19 @@
         return NO;
       if ([[menuItem title] isEqualToString:@"Unmount"])
         return NO;
+    }
+  }
+
+  if ([menuTitle isEqualToString:@"Edit"]) {
+    if ([[menuItem title] isEqualToString:@"Cut"]) {
+      // Check if parent directory is writable
+      NSString *parentDirectory = [selectedPath stringByDeletingLastPathComponent];
+      
+      if ([[NSFileManager defaultManager] isWritableFileAtPath:parentDirectory] == NO) {
+        return NO;
+      }
+    } else if ([[menuItem title] isEqualToString:@"Paste"]) {
+      return ([processManager editOperation] != nil);
     }
   }
 

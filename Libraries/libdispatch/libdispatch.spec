@@ -1,22 +1,16 @@
+%global toolchain clang
+
 Name:		libdispatch
-Epoch:		2
-Version:	5.4.2
+Epoch:		1
+Version:	5.9.2
 Release:	1%{?dist}
 Summary:	Grand Central Dispatch (GCD or libdispatch).
 License:	Apache 2.0
 URL:		https://github.com/apple/swift-corelibs-libdispatch
 Source0:	libdispatch-%{version}.tar.gz
-%if 0%{?el7}
-Patch0:		libdispatch-dispatch.h.patch
-%endif
 
-%if 0%{?el7}
-BuildRequires:	cmake3
-BuildRequires:	llvm-toolset-7.0-clang >= 7.0.1
-%else
 BuildRequires:	cmake
 BuildRequires:	clang >= 7.0.1
-%endif
 BuildRequires:	libtool
 BuildRequires:	libbsd-devel
 BuildRequires:	libstdc++-devel
@@ -51,19 +45,11 @@ Development header files for libdispatch (includes kqueue and pthread_workqueue)
 
 %prep
 %setup -n swift-corelibs-libdispatch-swift-%{version}-RELEASE
-%if 0%{?el7}
-%patch0 -p1
-%endif
 
 %build
 mkdir -p _build
 cd _build
-%if 0%{?el7}
-source /opt/rh/llvm-toolset-7.0/enable
-cmake3 .. \
-%else
 cmake .. \
-%endif
     -DCMAKE_C_COMPILER=clang \
     -DCMAKE_CXX_COMPILER=clang++ \
     -DCMAKE_INSTALL_PREFIX=/usr/NextSpace \
@@ -79,11 +65,19 @@ make %{?_smp_mflags}
 cd _build
 make install DESTDIR=%{buildroot}
 rm %{buildroot}/usr/NextSpace/include/Block_private.h
+cd %{buildroot}/usr/NextSpace/lib
+SHORT_VER=`echo %{version} | awk -F. '{print $1}'`
+mv libBlocksRuntime.so libBlocksRuntime.so.%{version}
+ln -sf libBlocksRuntime.so.%{version} libBlocksRuntime.so
+ln -sf libBlocksRuntime.so.%{version} libBlocksRuntime.so.$SHORT_VER
+mv libdispatch.so libdispatch.so.%{version}
+ln -sf libdispatch.so.%{version} libdispatch.so
+ln -sf libdispatch.so.%{version} libdispatch.so.$SHORT_VER
 
 %check
 
 %files
-/usr/NextSpace/lib/*.so
+/usr/NextSpace/lib/*.so*
 
 %files devel
 /usr/NextSpace/include/Block.h
@@ -92,6 +86,9 @@ rm %{buildroot}/usr/NextSpace/include/Block_private.h
 /usr/NextSpace/Documentation/man/man3/dispatch*
 
 %changelog
+* Tue Nov 5 2024 Andres Morales <armm77@icloud.com>
+  Support for CentOS 7 is being dropped.
+
 * Wed Sep 22 2021 Sergii Stoian <stoyan255@gmail.com> - 5.4.2-1
   Install man pages into Documentaion directory.
 

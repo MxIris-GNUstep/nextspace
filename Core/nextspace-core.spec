@@ -12,11 +12,7 @@ Source0:	nextspace-os_files-%{version}.tar.gz
 Source1:	https://github.com/gnustep/tools-make/archive/make-%{MAKE_VERSION}.tar.gz
 Source2:	nextspace.fsl
 
-%if 0%{?el7}
-BuildRequires:	llvm-toolset-7.0-clang >= 7.0.1
-%else
 BuildRequires:	clang >= 7.0.1
-%endif
 BuildRequires:	libdispatch-devel
 BuildRequires:	libobjc2-devel
 BuildRequires:	which
@@ -43,13 +39,7 @@ Summary:	Development header files for NextSpace core components.
 Requires:	%{name}%{?_isa} = %{version}-%{release}
 Requires:	libdispatch-devel
 Requires:	libobjc2-devel
-%if 0%{?el7}
-Requires:	centos-release-scl
-Requires:	centos-release-scl-rh
-Requires:	llvm-toolset-7.0-clang >= 7.0.1
-%else
 Requires:	clang >= 7.0.1
-%endif
 Requires:	make
 Requires:	git
 Requires:	patch
@@ -64,13 +54,12 @@ NextSpace environment.
 cp %{_sourcedir}/nextspace.fsl %{_builddir}/%{name}/tools-make-make-%{MAKE_VERSION}/FilesystemLayouts/nextspace
 
 %build
-%if 0%{?el7}
-source /opt/rh/llvm-toolset-7.0/enable
-export RUNTIME_VERSION="gnustep-1.8"
-%endif
 export CC=clang
 export CXX=clang++
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"%{buildroot}/Library/Libraries:/usr/NextSpace/lib"
+export CFLAGS="-F/usr/NextSpace/Frameworks"
+export CXXFLAGS=""
+export LDFLAGS=""
 
 # Build gnustep-make to include in -devel package
 cd tools-make-make-%{MAKE_VERSION}
@@ -94,20 +83,17 @@ cp -vr ./Library %{buildroot}
 cp -vr ./etc %{buildroot}
 rm %{buildroot}/etc/X11/xorg.conf.d/20-intel.conf
 cp -vr ./usr %{buildroot}
-cp -vr ./root %{buildroot}
 cp -vr ./dot_hidden %{buildroot}/.hidden
 mkdir %{buildroot}/Users
 mkdir -p %{buildroot}/usr/NextSpace/etc
+%if 0%{?fedora} && 0%{?fedora} < 41
+rm %{buildroot}/etc/systemd/logind.conf
+%endif
 
 %files 
 /.hidden
 /Library
 /Users
-/root/Library
-/root/.config
-/root/.emacs.nextspace
-/root/.gtkrc-2.0
-/root/.zshrc.nextspace
 /etc/ld.so.conf.d/nextspace.conf
 /etc/profile.d/nextspace.sh
 /etc/skel
@@ -115,7 +101,9 @@ mkdir -p %{buildroot}/usr/NextSpace/etc
 /etc/udev
 /etc/X11
 /etc/polkit-1/rules.d/10-udisks2.rules
-/usr/lib/systemd/logind.conf.d/lidswitch.conf
+%if 0%{?fedora} && 0%{?fedora} > 40
+/etc/systemd/logind.conf
+%endif
 /usr/NextSpace/Documentation/man/man1/open*.gz
 /usr/NextSpace/etc/
 /usr/NextSpace/bin/gnustep-services
@@ -138,7 +126,12 @@ mkdir -p %{buildroot}/usr/NextSpace/etc
 %post
 useradd -D -b /Users -s /bin/zsh
 tuned-adm profile desktop
-plymouth-set-default-theme -R nextspace
+if [ ! "`plymouth-set-default-theme`" = "nextspace" ]; then
+  plymouth-set-default-theme -R nextspace
+fi
+# Populate /root directory
+cp -r /etc/skel/.config /root
+cp -r /etc/skel/Library /root
 
 %preun
 if [ $1 -eq 0 ]; then
@@ -148,6 +141,9 @@ if [ $1 -eq 0 ]; then
 fi
 
 %changelog
+* Tue Nov 5 2024 Andres Morales <armm77@icloud.com>
+  Support for CentOS 7 is being dropped.
+
 * Wed Sep 22 2021 Sergii Stoian <stoyan255@gmail.com> - 0.95-12
 - Fontconfig configuration was made systemwide (link in /etc/fonts/conf.d).
 

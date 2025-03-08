@@ -39,12 +39,13 @@
 #import <Foundation/Foundation.h>
 #import <GNUstepGUI/GSDisplayServer.h>
 
+#import <SystemKit/OSEDefaults.h>
+#import <SystemKit/OSEFileManager.h>
 #import <SystemKit/OSEUDisksAdaptor.h>
 #import <SystemKit/OSEUDisksDrive.h>
+#import <SystemKit/OSEUDisksVolume.h>
 
 #import <DesktopKit/NXTAlert.h>
-#import <DesktopKit/NXTDefaults.h>
-#import <DesktopKit/NXTFileManager.h>
 
 #import "Viewers/FileViewer.h"
 #import "WMNotificationCenter.h"
@@ -255,7 +256,7 @@ static NSString *_rootPath = @"/";
 
   ext = [fullPath pathExtension];
   if ([self _extension:ext role:nil app:&appName] == NO) {
-    appName = [[NXTDefaults userDefaults] objectForKey:@"DefaultEditor"];
+    appName = [[OSEDefaults userDefaults] objectForKey:@"DefaultEditor"];
   }
 
   app = [self _connectApplication:appName];
@@ -429,7 +430,7 @@ static NSLock *raceLock = nil;
 
   if (rootFullpath && rootFullpath.length > 0) {
     fv = [self newViewerRootedAt:rootFullpath
-                          viewer:[[NXTDefaults userDefaults] objectForKey:@"PreferredViewer"]
+                          viewer:[[OSEDefaults userDefaults] objectForKey:@"PreferredViewer"]
                           isRoot:NO];
     if (fv) {
       if ([rootFullpath isEqualToString:fullPath]) {
@@ -476,7 +477,7 @@ static NSLock *raceLock = nil;
   *writableFlag = volume.isWritable;
   *unmountableFlag = !volume.isSystem;
 
-  switch (volume.type) {
+  switch (volume.filesystemType) {
     case NXTFSTypeEXT:
       *fileSystemType = @"EXT";
       break;
@@ -1213,7 +1214,7 @@ static NSLock *raceLock = nil;
 /** Use libmagic to determine file type*/
 - (NSImage *)_iconForFileContents:(NSString *)fullPath
 {
-  NXTFileManager *fm = [NXTFileManager defaultManager];
+  OSEFileManager *fm = [OSEFileManager defaultManager];
   NSString *mimeType = [fm mimeTypeForFile:fullPath];
   ;
   NSString *mime0, *mime1;
@@ -1495,6 +1496,8 @@ static NSLock *raceLock = nil;
       postNotificationName:NSWorkspaceDidTerminateApplicationNotification
                     object:self
                   userInfo:@{@"NSApplicationName" : [appCommand lastPathComponent]}];
+  // Update GSLaunchedApplications file state
+  [[NSWorkspace sharedWorkspace] launchedApplications];
 
   if (exitCode != 0) {
     NXTRunAlertPanel(_(@"Workspace"), _(@"Application '%@' exited with code %i"), nil, nil, nil,

@@ -1,138 +1,139 @@
-%define GS_REPO		https://github.com/gnustep
-%define BASE_VERSION	1_29_0
-%define GUI_VERSION	0_30_0
-%define BACK_VERSION	nextspace
-%define GORM_VERSION	1_3_1
-%define PC_VERSION	0_7_0
+%global toolchain clang
 
-Name:           nextspace-gnustep
-Version:        %{BASE_VERSION}_%{GUI_VERSION}
-Release:        1%{?dist}
-Summary:        GNUstep libraries.
+%define GS_REPO       https://github.com/gnustep
+%if 0%{?fedora} && 0%{?fedora} > 40
+%define BASE_VERSION  master
+%define BASE_TAG      master
+%else
+%define BASE_VERSION  1.30.0
+%define BASE_TAG      base-1_30_0
+%endif
+%define GUI_VERSION   0.31.0
+%define GUI_TAG       gui-0_31_0
+%define BACK_VERSION  nextspace
+%define GORM_TAG      gorm-1_4_0
+%define PC_TAG        projectcenter-0_7_0
 
-Group:          Libraries/NextSpace
-License:        GPLv3
-URL:		http://www.gnustep.org
-Source0:        %{GS_REPO}/libs-base/archive/base-%{BASE_VERSION}.tar.gz
-Source1:        %{GS_REPO}/libs-gui/archive/gui-%{GUI_VERSION}.tar.gz
-Source2:        back-art.tar.gz
-Source3:        %{GS_REPO}/apps-gorm/archive/gorm-%{GORM_VERSION}.tar.gz
-Source4:        %{GS_REPO}/apps-projectcenter/archive/projectcenter-%{PC_VERSION}.tar.gz
-Source5:        gdomap.interfaces
-Source6:        gdomap.service
-Source7:        gdnc.service
-Source8:        gdnc-local.service
-Source9:        gpbs.service
-Source10:       projectcenter-images.tar.gz
-Source11:       gorm-images.tar.gz
-Source12:       gnustep-gui-images.tar.gz
-Source13:       gnustep-gui-panels.tar.gz
+Name:       nextspace-gnustep
+Version:    %{BASE_VERSION}_%{GUI_VERSION}
+Release:    1%{?dist}
+Summary:    GNUstep libraries.
 
-Patch0:         gorm.patch
-Patch1:         pc.patch
-Patch2:         libs-gui_GSDisplayServer.patch
-Patch3:         libs-gui_NSApplication.patch
-Patch4:         libs-gui_NSDocument.patch
-Patch5:         libs-gui_NSPopUpButtonCell.patch
-Patch6:         libs-gui_NSPrintPanel.patch
-Patch7:         libs-gui_NSSavePanel.patch
-Patch8:         libs-gui_NSSound.patch
+Group:      Libraries/NextSpace
+License:    GPLv3
+URL:        http://www.gnustep.org
+Source0:    %{GS_REPO}/libs-base/archive/%{BASE_TAG}.tar.gz
+Source1:    %{GS_REPO}/libs-gui/archive/%{GUI_TAG}.tar.gz
+Source2:    back-art.tar.gz
+Source3:    %{GS_REPO}/apps-gorm/archive/%{GORM_TAG}.tar.gz
+Source4:    %{GS_REPO}/apps-projectcenter/archive/%{PC_TAG}.tar.gz
+Source5:    gdomap.interfaces
+Source6:    gdomap.service
+Source7:    gdnc.service
+Source8:    gdnc-local.service
+Source9:    gpbs.service
+Source10:   projectcenter-images.tar.gz
+Source11:   gorm-images.tar.gz
+Source12:   gnustep-gui-images.tar.gz
+Source13:   gnustep-gui-panels.tar.gz
+
+Patch0:     gorm.patch
+Patch1:     pc.patch
+Patch2:     libs-gui_NSApplication.patch
+Patch3:     libs-gui_NSPopUpButton.patch
+Patch4:     libs-gui_GSThemeDrawing.patch
 
 # Build GNUstep libraries in one RPM package
-Provides:	gnustep-base-%{BASE_VERSION}
-Provides:	gnustep-gui-%{GUI_VERSION}
-Provides:	gnustep-back-%{BACK_VERSION}
-Provides:	gorm-%{GORM_VERSION}
-Provides:	projectcenter-%{PC_VERSION}
+Provides:   gnustep-base-%{BASE_TAG}
+Provides:   gnustep-gui-%{GUI_TAG}
+Provides:   gnustep-back-%{BACK_VERSION}
+Provides:   gorm-%{GORM_TAG}
+Provides:   projectcenter-%{PC_TAG}
 
-Conflicts:	gnustep-base
-Conflicts:	gnustep-filesystem
-Conflicts:	gnustep-gui
-Conflicts:	gnustep-back
+Conflicts:  gnustep-base
+Conflicts:  gnustep-filesystem
+Conflicts:  gnustep-gui
+Conflicts:  gnustep-back
 
-%if 0%{?el7}
-BuildRequires:	llvm-toolset-7.0-clang >= 7.0.1
-%else
-BuildRequires:	clang >= 7.0.1
-%endif
+BuildRequires:  clang >= 7.0.1
 
 # gnustep-base
-BuildRequires:	libffi-devel
-BuildRequires:	libobjc2-devel
-BuildRequires:	gnutls-devel
-BuildRequires:	openssl-devel
-BuildRequires:	libicu-devel
-BuildRequires:	libxml2-devel
-BuildRequires:	libxslt-devel
+BuildRequires:  libffi-devel
+BuildRequires:  libobjc2-devel
+BuildRequires:  gnutls-devel
+BuildRequires:  openssl-devel
+BuildRequires:  libicu-devel
+BuildRequires:  libxml2-devel
+BuildRequires:  libxslt-devel
 #
-Requires:	libffi >= 3.0.13
-Requires:	libobjc2 >= 1.8.2
-Requires:	gnutls >= 3.3.8
-Requires:	openssl-libs >= 1.0.1e
-Requires:	libicu >= 50.1.2
-Requires:	libxml2 >= 2.9.1
-Requires:	libxslt >= 1.1.28
+Requires:   libffi >= 3.0.13
+Requires:   libobjc2 >= 1.8.2
+Requires:   gnutls >= 3.3.8
+Requires:   openssl-libs >= 1.0.1e
+Requires:   libicu >= 50.1.2
+Requires:   libxml2 >= 2.9.1
+Requires:   libxslt >= 1.1.28
 
 # gnustep-gui
-BuildRequires:	giflib-devel
-BuildRequires:	libjpeg-turbo-devel
-BuildRequires:	libpng-devel
-BuildRequires:	libtiff-devel
-BuildRequires:	libao-devel
-BuildRequires:	libsndfile-devel
+BuildRequires:  giflib-devel
+BuildRequires:  libjpeg-turbo-devel
+BuildRequires:  libpng-devel
+BuildRequires:  libtiff-devel
+BuildRequires:  libao-devel
+BuildRequires:  libsndfile-devel
 #
-Requires:	giflib >= 4.1.6
-Requires:	libjpeg-turbo >= 1.2.90
-Requires:	libpng >= 1.5.13
-Requires:	libtiff >= 4.0.3
-Requires:	libao
-Requires:	libsndfile
+Requires:   giflib >= 4.1.6
+Requires:   libjpeg-turbo >= 1.2.90
+Requires:   libpng >= 1.5.13
+Requires:   libtiff >= 4.0.3
+Requires:   libao
+Requires:   libsndfile
 
 ## /Library/Bundles/GSPrinting/GSCUPS.bundle
-BuildRequires:	cups-devel
-BuildRequires:	nss-softokn-freebl-devel
-BuildRequires:	xz-devel
+BuildRequires:  cups-devel
+BuildRequires:  nss-softokn-freebl-devel
+BuildRequires:  xz-devel
 #
-Requires:	cups-libs >= 1.6.3
-Requires:	nss-softokn-freebl >= 3.16.2
-Requires:	xz-libs >= 1.5.2
+Requires:   cups-libs >= 1.6.3
+Requires:   nss-softokn-freebl >= 3.16.2
+Requires:   xz-libs >= 1.5.2
 
 # gnustep-back art
-BuildRequires:	libart_lgpl-devel
-BuildRequires:	freetype-devel
-BuildRequires:	mesa-libGL-devel
-BuildRequires:	libX11-devel
-BuildRequires:	libXcursor-devel
-BuildRequires:	libXext-devel
-BuildRequires:	libXfixes-devel
-BuildRequires:	libXmu-devel
-BuildRequires:	libXt-devel
-BuildRequires:	libXrandr-devel
+BuildRequires:  libart_lgpl-devel
+BuildRequires:  freetype-devel
+BuildRequires:  mesa-libGL-devel
+BuildRequires:  libX11-devel
+BuildRequires:  libXcursor-devel
+BuildRequires:  libXext-devel
+BuildRequires:  libXfixes-devel
+BuildRequires:  libXmu-devel
+BuildRequires:  libXt-devel
+BuildRequires:  libXrandr-devel
 #
-Requires:	libart_lgpl
-Requires:	freetype
-Requires:	mesa-libGL >= 10.6.5
-Requires:	libX11 >= 1.6.3
-Requires:	libXcursor >= 1.1.14
-Requires:	libXext >= 1.3.3
-Requires:	libXfixes >= 5.0.1
-Requires:	libXmu >= 1.1.2
-Requires:	libXt >= 1.1.4
-Requires:	libXrandr >= 1.5
+Requires:   libart_lgpl
+Requires:   freetype
+Requires:   mesa-libGL >= 10.6.5
+Requires:   libX11 >= 1.6.3
+Requires:   libXcursor >= 1.1.14
+Requires:   libXext >= 1.3.3
+Requires:   libXfixes >= 5.0.1
+Requires:   libXmu >= 1.1.2
+Requires:   libXt >= 1.1.4
+Requires:   libXrandr >= 1.5
 # projectcenter
-Requires:	gdb
+Requires:   gdb
 
 %description
 GNUstep libraries - implementation of OpenStep (AppKit, Foundation).
 
 %package devel
-Summary:	OpenStep Application Kit, Foundation Kit and GNUstep extensions header files.
-Requires:	%{name}%{?_isa} = %{version}-%{release}
-Provides:	gnustep-base-devel
-Provides:	gnustep-gui-devel
-Provides:	gnustep-back-devel
-Provides:	gorm
-Provides:	projectcenter
+Summary:    OpenStep Application Kit, Foundation Kit and GNUstep extensions header files.
+Requires:   %{name}%{?_isa} = %{version}-%{release}
+Provides:   gnustep-base-devel
+Provides:   gnustep-gui-devel
+Provides:   gnustep-back-devel
+Provides:   gorm
+Provides:   projectcenter
 
 %description devel
 OpenStep Application Kit, Foundation Kit and GNUstep extensions header files.
@@ -140,43 +141,33 @@ GNUstep Make installed with nextspace-core-devel package.
 
 %prep
 %setup -c -n nextspace-gnustep -a 0 -a 1 -a 2 -a 3 -a 4
-cp %{_sourcedir}/gorm.patch %{_builddir}/nextspace-gnustep/apps-gorm-gorm-%{GORM_VERSION}/
-cd %{_builddir}/nextspace-gnustep/apps-gorm-gorm-%{GORM_VERSION}/
-%patch0 -p1
-cp %{_sourcedir}/pc.patch %{_builddir}/nextspace-gnustep/apps-projectcenter-projectcenter-%{PC_VERSION}/
-cd %{_builddir}/nextspace-gnustep/apps-projectcenter-projectcenter-%{PC_VERSION}/
-%patch1 -p1
-cp %{_sourcedir}/libs-gui_GSDisplayServer.patch %{_builddir}/nextspace-gnustep/libs-gui-gui-%{GUI_VERSION}/
-cp %{_sourcedir}/libs-gui_NSApplication.patch %{_builddir}/nextspace-gnustep/libs-gui-gui-%{GUI_VERSION}/
-cp %{_sourcedir}/libs-gui_NSDocument.patch %{_builddir}/nextspace-gnustep/libs-gui-gui-%{GUI_VERSION}/
-cp %{_sourcedir}/libs-gui_NSPopUpButtonCell.patch %{_builddir}/nextspace-gnustep/libs-gui-gui-%{GUI_VERSION}/
-cp %{_sourcedir}/libs-gui_NSPrintPanel.patch %{_builddir}/nextspace-gnustep/libs-gui-gui-%{GUI_VERSION}/
-cp %{_sourcedir}/libs-gui_NSSavePanel.patch %{_builddir}/nextspace-gnustep/libs-gui-gui-%{GUI_VERSION}/
-cp %{_sourcedir}/libs-gui_NSSound.patch %{_builddir}/nextspace-gnustep/libs-gui-gui-%{GUI_VERSION}/
-cd %{_builddir}/nextspace-gnustep/libs-gui-gui-%{GUI_VERSION}/
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
+cp %{_sourcedir}/gorm.patch %{_builddir}/nextspace-gnustep/apps-gorm-%{GORM_TAG}/
+cd %{_builddir}/nextspace-gnustep/apps-gorm-%{GORM_TAG}/
+%patch -P0 -p1
+cp %{_sourcedir}/pc.patch %{_builddir}/nextspace-gnustep/apps-projectcenter-%{PC_TAG}/
+cd %{_builddir}/nextspace-gnustep/apps-projectcenter-%{PC_TAG}/
+%patch -P1 -p1
+cp %{_sourcedir}/libs-gui_NSApplication.patch %{_builddir}/nextspace-gnustep/libs-gui-%{GUI_TAG}/
+cp %{_sourcedir}/libs-gui_NSPopUpButton.patch %{_builddir}/nextspace-gnustep/libs-gui-%{GUI_TAG}/
+cd %{_builddir}/nextspace-gnustep/libs-gui-%{GUI_TAG}/
+%patch -P2 -p1
+%patch -P3 -p1
+%patch -P4 -p1
+
 rm -rf %{buildroot}
 
 #
 # Build phase
 #
 %build
-%if 0%{?el7}
-source /opt/rh/llvm-toolset-7.0/enable
-%endif
 source /Developer/Makefiles/GNUstep.sh
 export CC=clang
 export CXX=clang++
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"%{buildroot}/Library/Libraries:/usr/NextSpace/lib"
+unset CFLAGS
 
 # Foundation (relies on gnustep-make included in nextspace-core-devel)
-cd libs-base-base-%{BASE_VERSION}
+cd libs-base-%{BASE_TAG}
 ./configure
 make
 %{make_install}
@@ -187,7 +178,7 @@ export ADDITIONAL_LIB_DIRS=" -L%{buildroot}/Library/Libraries"
 export PATH+=":%{buildroot}/Library/bin:%{buildroot}/usr/NextSpace/bin"
 
 # Application Kit
-cd libs-gui-gui-%{GUI_VERSION}
+cd libs-gui-%{GUI_TAG}
 tar xzf %{_sourcedir}/gnustep-gui-panels.tar.gz
 sudo cp %{buildroot}/Developer/Makefiles/Additional/base.make /Developer/Makefiles/Additional/
 ./configure
@@ -210,13 +201,13 @@ cd ..
 # Build GORM
 export ADDITIONAL_OBJCFLAGS="-I%{buildroot}/Developer/Headers"
 export ADDITIONAL_LDFLAGS+="-L%{buildroot}/Library/Libraries -lgnustep-base -lgnustep-gui"
-cd apps-gorm-gorm-%{GORM_VERSION}
+cd apps-gorm-%{GORM_TAG}
 tar zxf %{_sourcedir}/gorm-images.tar.gz
 make
 cd ..
 
 # Build ProjectCenter
-cd apps-projectcenter-projectcenter-%{PC_VERSION}
+cd apps-projectcenter-%{PC_TAG}
 tar zxf %{_sourcedir}/projectcenter-images.tar.gz
 make
 cd ..
@@ -229,11 +220,11 @@ export GNUSTEP_MAKEFILES=/Developer/Makefiles
 export PATH+=":%{buildroot}/Library/bin:%{buildroot}/usr/NextSpace/bin"
 export QA_SKIP_BUILD_ROOT=1
 # Install Base
-cd libs-base-base-%{BASE_VERSION}
+cd libs-base-%{BASE_TAG}
 %{make_install}
 cd ..
 # Install GUI
-cd libs-gui-gui-%{GUI_VERSION}
+cd libs-gui-%{GUI_TAG}
 %{make_install}
 cd ..
 # Install Back
@@ -242,11 +233,11 @@ cd back-art
 cd ..
 # Install GORM
 export GNUSTEP_INSTALLATION_DOMAIN=NETWORK
-cd apps-gorm-gorm-%{GORM_VERSION}
+cd apps-gorm-%{GORM_TAG}
 %{make_install}
 cd ..
 # Install ProjectCenter
-cd apps-projectcenter-projectcenter-%{PC_VERSION}
+cd apps-projectcenter-%{PC_TAG}
 %{make_install}
 cd ..
 
@@ -265,11 +256,11 @@ cd ..
 # Files
 #
 %files
-/Library/
-/usr/NextSpace/
+/Library
+/usr/NextSpace
 
 %files devel
-/Developer/
+/Developer
 
 #
 # Package install
@@ -277,7 +268,7 @@ cd ..
 # for %pre and %post $1 = 1 - installation, 2 - upgrade
 #%pre
 %post
-libs -p /sbin/ldconfig
+ldconfig
 if [ $1 -eq 1 ]; then
     # post-installation
     systemctl enable /usr/NextSpace/lib/systemd/gdomap.service;
@@ -287,10 +278,8 @@ if [ $1 -eq 1 ]; then
     systemctl start gdomap gdnc gpbs;
 elif [ $1 -eq 2 ]; then
     # post-upgrade
-    #echo "Please restart GNUstep services manually with command:"
-    #echo "# systemctl restart gdomap gdnc gpbs"
     systemctl daemon-reload;
-    # systemctl restart gdomap gdnc gpbs;
+    systemctl restart gdomap gdnc gpbs;
 fi
 
 # for %preun and %postun $1 = 0 - uninstallation, 1 - upgrade. 
@@ -308,9 +297,14 @@ elif  [ $1 -eq 1 ]; then
 fi
 
 %postun
-/bin/rm -rf /usr/NextSpace/Preferences/
+if [ -d /usr/NextSpace/Preferences ]; then
+  rm -rf /usr/NextSpace/Preferences
+fi
 
 %changelog
+* Tue Nov 5 2024 Andres Morales <armm77@icloud.com>
+  Support for CentOS 7 is being dropped.
+
 * Thu Apr 30 2020 Sergii Stoian <stoyan255@gmail.com> - 1_27_0_nextspace-1
 - Switched to usage of RedHat Software Collection clang 7.0.
 - Source file should be downloaded with `spectool -g` command into

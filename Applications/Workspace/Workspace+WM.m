@@ -33,7 +33,7 @@
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
-#import <DesktopKit/NXTDefaults.h>
+#import <SystemKit/OSEDefaults.h>
 #import <DesktopKit/NXTAlert.h>
 #import <SoundKit/NXTSound.h>
 #import <SystemKit/OSEScreen.h>
@@ -57,6 +57,75 @@ extern Display *dpy;
 // All the functions below are executed inside 'wwmaker_q' GCD queue.
 // TODO: all events based function should be replaces with CF notifications.
 //-----------------------------------------------------------------------------
+
+@interface NSBitmapImageRep (GSPrivate)
+- (NSBitmapImageRep *)_convertToFormatBitsPerSample:(NSInteger)bps
+                                    samplesPerPixel:(NSInteger)spp
+                                           hasAlpha:(BOOL)alpha
+                                           isPlanar:(BOOL)isPlanar
+                                     colorSpaceName:(NSString *)colorSpaceName
+                                       bitmapFormat:(NSBitmapFormat)bitmapFormat
+                                        bytesPerRow:(NSInteger)rowBytes
+                                       bitsPerPixel:(NSInteger)pixelBits;
+@end
+
+static NSBitmapImageRep *_getBestRepresentationFromImage(NSImage *image)
+{
+  NSArray *imageRepresentations = [image representations];
+  NSUInteger repsCount;
+  NSBitmapImageRep *imageRep;
+  NSInteger largestBPP = 0;
+  int bestRepIndex = 0;
+
+  // Get representation with highest Bits/Pixel value
+  repsCount = imageRepresentations.count;
+  for (NSUInteger i = 0; i < repsCount; i++) {
+    imageRep = imageRepresentations[i];
+    if ([imageRep bitsPerPixel] > largestBPP) {
+      largestBPP = [imageRep bitsPerPixel];
+      bestRepIndex = i;
+    }
+  }
+
+  return imageRepresentations[bestRepIndex];
+}
+
+RImage *WSLoadRasterImage(const char *file_path)
+{
+  NSImage *image = [[NSImage alloc] initWithContentsOfFile:[NSString stringWithCString:file_path]];
+  RImage *raster_image = NULL;
+
+  if (image) {
+    NSSize imageSize;
+    NSBitmapImageRep *imageRep, *convertedRep;
+    BOOL isAlpha;
+    int width, height, samplesPerPixel;
+
+    imageRep = _getBestRepresentationFromImage(image);
+
+    imageSize = [imageRep size];
+    width = ceil(imageSize.width);
+    height = ceil(imageSize.height);
+    isAlpha = [imageRep hasAlpha];
+    samplesPerPixel = [imageRep hasAlpha] ? 4 : 3;
+
+    convertedRep = [imageRep _convertToFormatBitsPerSample:8
+                                           samplesPerPixel:samplesPerPixel
+                                                  hasAlpha:isAlpha
+                                                  isPlanar:NO
+                                            colorSpaceName:NSCalibratedRGBColorSpace
+                                              bitmapFormat:[imageRep bitmapFormat]
+                                               bytesPerRow:0
+                                              bitsPerPixel:0];
+
+    raster_image = RCreateImage(width, height, isAlpha);
+    memcpy(raster_image->data, [convertedRep bitmapData],
+           width * height * sizeof(unsigned char) * samplesPerPixel);
+    [image release];
+  }
+
+  return raster_image;
+}
 
 NSImage *WSImageForRasterImage(RImage *r_image)
 {
@@ -179,7 +248,7 @@ void WSUpdateScreenInfo(WScreen *scr)
   XUnlockDisplay(dpy);
 
   NSDebugLLog(@"Screen", @"Sending OSEScreenDidChangeNotification...");
-  // Send notification to active OSEScreen applications.
+  // Send notification to active OSEScreen applications of current user.
   [[NSDistributedNotificationCenter defaultCenter]
       postNotificationName:OSEScreenDidChangeNotification
                     object:nil];
@@ -271,7 +340,7 @@ int WSRunAlertPanel(char *title, char *message, char *defaultButton, char *alter
 extern void wShakeWindow(WWindow *wwin);
 void WSRingBell(WWindow *wwin)
 {
-  NXTDefaults *defs = [NXTDefaults globalUserDefaults];
+  OSEDefaults *defs = [OSEDefaults globalUserDefaults];
   NSString *beepType = [defs objectForKey:@"NXSystemBeepType"];
 
   if (beepType && [beepType isEqualToString:@"Visual"]) {

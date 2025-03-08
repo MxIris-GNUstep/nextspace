@@ -27,6 +27,7 @@
 -fobjc-runtime=gnustep-1.8
 -fblocks
 -fconstant-string-class=NSConstantString
+-F/usr/NextSpace/Frameworks
 -I.
 -I..
 -I../..
@@ -52,4 +53,4 @@
 -I/usr/include/dbus-1.0
 -I/usr/lib64/dbus-1.0/include
 -I/usr/include/gio-unix-2.0
-
+-F/usr/NextSpace/Frameworks

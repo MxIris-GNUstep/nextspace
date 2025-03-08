@@ -100,7 +100,7 @@
       
   self = [super init];
       
-  defaults = [[NXTDefaults alloc] initDefaultsWithPath:NSUserDomainMask
+  defaults = [[OSEDefaults alloc] initDefaultsWithPath:NSUserDomainMask
                                                 domain:@"Login"];
 
   bundle = [NSBundle bundleForClass:[self class]];
@@ -116,9 +116,12 @@
   struct group *grp;
   int i = 0;
   BOOL isAdmin = NO;
-  
+
   grp = getgrnam("wheel");
-  while (grp->gr_mem[i] != NULL) {
+  if (grp == NULL) {
+    grp = getgrnam("adm");
+  }
+  while (grp && grp->gr_mem[i] != NULL) {
     printf("[Login] wheel member: %s\n", grp->gr_mem[i]);
     if (!strcmp(grp->gr_mem[i], [NSUserName() cString])) {
       isAdmin = YES;
@@ -132,7 +135,7 @@
 
 - (void)awakeFromNib
 {
-  systemDefaults = [[NXTDefaults alloc]
+  systemDefaults = [[OSEDefaults alloc]
                      initDefaultsWithPath:NSSystemDomainMask
                                    domain:@"Login"];
 
@@ -287,13 +290,12 @@
   [systemDefaults setObject:[NSNumber numberWithInteger:[sender state]]
                      forKey:@"RememberLastLoggedInUser"];
   [systemDefaults synchronize];
-  
-  [[NSDistributedNotificationCenter
-     notificationCenterForType:GSPublicNotificationCenterType]
-    postNotificationName:@"LoginDefaultsDidChangeNotification"
-                  object:@"Preferences"
-                userInfo:nil
-      deliverImmediately:YES];
+
+  [[NSDistributedNotificationCenter notificationCenterForType:GSPublicNotificationCenterType]
+      postNotificationName:@"LoginDefaultsDidChangeNotification"
+                    object:@"Preferences"
+                  userInfo:nil
+        deliverImmediately:YES];
 }
 - (IBAction)setDisplayHostName:(id)sender
 {
@@ -302,13 +304,12 @@
   [systemDefaults setObject:[NSNumber numberWithInteger:[sender state]]
                      forKey:@"DisplayHostName"];
   [systemDefaults synchronize];
-  
-  [[NSDistributedNotificationCenter
-     notificationCenterForType:GSPublicNotificationCenterType]
-    postNotificationName:@"LoginDefaultsDidChangeNotification"
-                  object:@"Preferences"
-                userInfo:nil
-      deliverImmediately:YES];
+
+  [[NSDistributedNotificationCenter notificationCenterForType:GSPublicNotificationCenterType]
+      postNotificationName:@"LoginDefaultsDidChangeNotification"
+                    object:@"Preferences"
+                  userInfo:nil
+        deliverImmediately:YES];
 }
 
 @end

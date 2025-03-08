@@ -1,3 +1,4 @@
+%global toolchain clang
 %define WRASTER_VERSION 7.0.1
 
 Name:           libwraster
@@ -9,15 +10,9 @@ License:        GPLv3
 URL:            https://github.com/trunkmaster/nextspace
 Source0:        libwraster-%{WRASTER_VERSION}.tar.gz
 
-%if 0%{?el7}
-BuildRequires:	cmake3
-%define CMAKE cmake3
-BuildRequires:	llvm-toolset-7.0-clang >= 7.0.1
-%else
 BuildRequires:	cmake
 %define CMAKE cmake
 BuildRequires:	clang >= 7.0.1
-%endif
 BuildRequires:	nextspace-core-devel >= 0.95
 BuildRequires:	giflib-devel
 BuildRequires:	libjpeg-turbo-devel
@@ -74,9 +69,7 @@ rm -rf %{buildroot}
 export CC=clang
 export CMAKE=%{CMAKE}
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"%{buildroot}/Library/Libraries:/usr/NextSpace/lib"
-%if 0%{?el7}
-source /opt/rh/llvm-toolset-7.0/enable
-%endif
+export CFLAGS=""
 source /Developer/Makefiles/GNUstep.sh
 make
 
@@ -84,9 +77,6 @@ make
 # Build install phase
 #
 %install
-%if 0%{?el7}
-source /opt/rh/llvm-toolset-7.0/enable
-%endif
 source /Developer/Makefiles/GNUstep.sh
 export PATH+=":%{buildroot}/Library/bin:%{buildroot}/usr/NextSpace/bin"
 export QA_SKIP_BUILD_ROOT=1
@@ -106,6 +96,9 @@ export CMAKE=%{CMAKE}
 /usr/NextSpace/include/wraster.h
 
 %changelog
+* Tue Nov 5 2024 Andres Morales <armm77@icloud.com>
+  Support for CentOS 7 is being dropped.
+
 * Sun Apr 2 2023 Andres Morales <armm77@icloud.com> 7.0.1
 - Version update of libwraster 7.0.1
 
